@@ -1,0 +1,21 @@
+{
+  "name": "CitiCo Bug Checker",
+  "short_name": "CitiCo",
+  "description": "落ち着いて虫を判定するための、やさしいチェッカー",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f5f5dc",
+  "theme_color": "#e0eed0",
+  "icons": [
+    {
+      "src": "bugchecker192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "bugchecker512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

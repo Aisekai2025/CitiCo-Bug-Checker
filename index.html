@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#e0eed0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
+    <title>CitiCo Bug Checker</title>
+    <style>
+        :root {
+            --bg-color: #f5f5dc;
+            --main-green: #e0eed0;
+            --accent-brown: #4b3621;
+            --soft-white: #ffffff;
+            --low-danger: #8da173;
+            --mid-danger: #d4a373;
+            --high-danger: #bc6c25;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--accent-brown);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--accent-brown);
+        }
+
+        .description {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .tag-btn {
+            background-color: var(--soft-white);
+            border: 1px solid var(--main-green);
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--accent-brown);
+        }
+
+        .tag-btn.active {
+            background-color: var(--main-green);
+            transform: scale(0.95);
+        }
+
+        #search-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 15px;
+            border-radius: 15px;
+            border: 2px solid var(--main-green);
+            margin-bottom: 20px;
+            font-size: 1rem;
+            outline: none;
+            background-color: var(--soft-white);
+        }
+
+        #check-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--main-green);
+            border: none;
+            border-radius: 15px;
+            color: var(--accent-brown);
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        #check-btn:active {
+            opacity: 0.8;
+        }
+
+        #result-area {
+            margin-top: 30px;
+            width: 100%;
+        }
+
+        .result-card {
+            background: var(--soft-white);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .bug-icon {
+            width: 60px;
+            height: 60px;
+            fill: var(--accent-brown);
+        }
+
+        .danger-bar-container {
+            background: #eee;
+            height: 8px;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .danger-bar {
+            height: 100%;
+            transition: width 1s ease-in-out;
+        }
+
+        .danger-text {
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .advice-box {
+            background-color: var(--main-green);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            margin-top: 15px;
+        }
+
+        .calm-message {
+            font-style: italic;
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .no-result {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .breathing-circle {
+            width: 50px;
+            height: 50px;
+            background: var(--main-green);
+            border-radius: 50%;
+            margin: 20px auto;
+            animation: breathe 4s infinite ease-in-out;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.5); opacity: 0.2; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>CitiCo Bug Checker</h1>
+        <p class="description">大丈夫ですよ。ゆっくり特徴を教えてください。</p>
+    </header>
+
+    <div class="tag-container" id="tag-box">
+        </div>
+
+    <input type="text" id="search-input" placeholder="例：黒くてカサカサ動く...">
+    <button id="check-btn">判定する</button>
+
+    <div id="result-area"></div>
+</div>
+
+<script>
+    // データベース
+    const bugDB = [
+        { name: "ゴキブリ", tags: ["黒", "茶", "大", "速い", "飛ぶ", "普通"], danger: "中", harm: "病原菌を運ぶことがありますが、直接噛んだりはしません。", method: "殺虫剤か、新聞紙などで優しく外へ。石鹸水をかけるのも有効です。", message: "驚きますよね。でも、彼らも出口を探しているだけかもしれません。", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><path d="M50 20 C30 20 20 40 20 60 C20 80 30 90 50 90 C70 90 80 80 80 60 C80 40 70 20 50 20 M20 40 L10 30 M80 40 L90 30 M20 60 L5 60 M80 60 L95 60"/></svg>' },
+        { name: "アシダカグモ", tags: ["茶", "大", "速い", "多い", "いいえ"], danger: "低", harm: "見た目は怖いですが、害虫を食べてくれる「軍曹」と呼ばれる益虫です。", method: "放置しても大丈夫ですが、苦手なら長い棒などで外へ誘導してください。", message: "実は家の守り神。あなたを助けに来てくれたのかもしれません。", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><circle cx="50" cy="50" r="10"/><path d="M40 50 L10 20 M40 50 L10 50 M40 50 L10 80 M60 50 L90 20 M60 50 L90 50 M60 50 L90 80 M50 40 L50 10 M50 60 L50 90" stroke="currentColor" fill="none" stroke-width="3"/></svg>' },
+        { name: "ムカデ", tags: ["黒", "大", "多い", "いいえ"], danger: "高", harm: "噛まれると非常に痛く、腫れることがあります。毒があります。", method: "素手で触らず、火バサミなどで掴むか、専用の殺虫剤を使いましょう。", message: "落ち着いて。靴や布団に入る前によく確認しましょうね。", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><path d="M20 50 Q50 40 80 50" fill="none" stroke="currentColor" stroke-width="5"/><path d="M25 50 L25 70 M35 50 L35 70 M45 50 L45 70 M55 50 L55 70 M65 50 L65 70 M75 50 L75 70" stroke="currentColor" stroke-width="2"/></svg>' },
+        { name: "ゲジ(ゲジゲジ)", tags: ["灰色", "中", "速い", "多い", "いいえ"], danger: "低", harm: "無害です。他の害虫を食べてくれる益虫ですが、見た目で損をしています。", method: "何もしなくて大丈夫ですが、気になるなら掃除機で吸うか外へ逃がして。", message: "驚かせてごめんね、と彼らは思っているはずですよ。", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><ellipse cx="50" cy="50" rx="30" ry="10"/><path d="M30 50 L10 30 M40 50 L20 20 M50 50 L50 10 M60 50 L80 20 M70 50 L90 30" stroke="currentColor" stroke-width="2"/></svg>' },
+        { name: "カメムシ", tags: ["緑", "茶", "小", "普通", "飛ぶ", "はい"], danger: "低", harm: "刺激すると強い臭いを出します。それ以外の害はありません。", method: "刺激しないようガムテープで優しく包むか、ペットボトルへ誘導しましょう。", message: "静かにしていれば、そのうちどこかへ行ってくれますよ。", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><path d="M50 20 L30 40 L30 70 L50 90 L70 70 L70 40 Z"/></svg>' },
+        { name: "ハエトリグモ", tags: ["黒", "小", "速い", "多い", "いいえ"], danger: "低", harm: "全くの無害。コバエなどを食べてくれる可愛い働き者です。", method: "そのまま見守ってあげてください。ぴょんぴょん跳ねて移動します。", message: "小さな同居人だと思って、温かく見守ってみませんか？", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><circle cx="40" cy="50" r="5"/><circle cx="60" cy="50" r="5"/><path d="M50 40 L50 20 M30 50 L10 50 M70 50 L90 50" stroke="currentColor"/></svg>' },
+        { name: "ガガンボ", tags: ["茶", "大", "飛ぶ", "はい", "普通"], danger: "低", harm: "蚊に似ていますが血は吸いません。非常に弱く、無害です。", method: "窓を開けて、うちわで仰いで外へ出してあげましょう。", message: "見た目は大きいけれど、実はとっても繊細な生き物なんです。", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><circle cx="50" cy="50" r="5"/><path d="M50 50 L10 10 M50 50 L90 10 M50 50 L10 90 M50 50 L90 90" stroke="currentColor"/></svg>' },
+        { name: "ヤスデ", tags: ["茶", "小", "多い", "いいえ"], danger: "低", harm: "噛みませんが、体液に触れると荒れることがあります。集団で出ることがあります。", method: "ホウキとチリトリで集めて、草むらへ返してあげましょう。", message: "のんびり歩いているだけ。ゆっくり接してあげてください。", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><rect x="20" y="45" width="60" height="10" rx="5"/><path d="M25 55 L25 65 M35 55 L35 65 M45 55 L45 65 M55 55 L55 65" stroke="currentColor"/></svg>' },
+        { name: "カマドウマ", tags: ["茶", "中", "速い", "普通", "いいえ"], danger: "低", harm: "無害ですが、暗い場所から突然飛び出すので驚かされます。", method: "光に集まる習性がないため、追い出すには物理的に誘導が必要です。", message: "別名「便所コオロギ」。名前で損をしていますが、ただの恥ずかしがり屋です。", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><ellipse cx="40" cy="60" rx="20" ry="10"/><path d="M60 60 L80 30 L90 70" fill="none" stroke="currentColor" stroke-width="3"/></svg>' },
+        { name: "シバンムシ", tags: ["茶", "小", "普通", "はい"], danger: "低", harm: "乾燥食品（小麦粉やパスタ）を食べてしまいます。人は刺しません。", method: "発生源の食品を処分し、キッチンを掃除しましょう。", message: "美味しい匂いに誘われちゃったみたいですね。お掃除のチャンスかも。", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><circle cx="50" cy="50" r="15"/></svg>' },
+        { name: "チョウバエ", tags: ["黒", "小", "飛ぶ", "はい", "普通"], danger: "低", harm: "お風呂場などの水回りに発生します。不潔に見えますが直接の害は低いです。", method: "排水溝を掃除し、お湯を流すのが効果的です。", message: "水回りを綺麗にすれば、自然といなくなりますよ。深呼吸して。", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><path d="M50 50 L30 30 Q50 10 70 30 Z M50 50 L30 70 Q50 90 70 70 Z"/></svg>' },
+        { name: "チャタテムシ", tags: ["白", "小", "いいえ", "普通"], danger: "低", harm: "本や畳の湿気を好みます。人は刺しませんが、アレルギーの原因になることも。", message: "お部屋の空気を入れ替えて、カラッとさせてあげましょう。", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><ellipse cx="50" cy="50" rx="10" ry="5"/></svg>', method: "除湿と掃除機が一番の解決策です。" },
+        { name: "ユスリカ", tags: ["白", "小", "飛ぶ", "はい", "普通"], danger: "低", harm: "蚊に似ていますが血は吸いません。夕方に蚊柱を作ることがあります。", method: "網戸を閉めるか、照明をLEDに変えると寄りにくくなります。", message: "ただの光が好きな小さな虫さん。心配いりませんよ。", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><path d="M50 50 L20 40 M50 50 L80 40" stroke="currentColor"/></svg>' },
+        { name: "カミキリムシ", tags: ["黒", "茶", "大", "飛ぶ", "普通", "はい"], danger: "中", harm: "強いアゴを持っており、不用意に触ると噛まれて痛いことがあります。", method: "背中を優しくつまんで外へ。触角が長いので注意して。", message: "かっこいい模様ですね。森へ帰りたがっているのかもしれません。", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><path d="M50 30 L50 80 M30 40 L70 40" stroke="currentColor" stroke-width="4"/><path d="M40 30 Q20 10 10 20 M60 30 Q80 10 90 20" fill="none" stroke="currentColor"/></svg>' },
+        { name: "テントウムシ", tags: ["赤", "小", "飛ぶ", "はい", "普通"], danger: "低", harm: "全く無害。アブラムシを食べてくれる益虫です。", method: "手の上に乗せて、外で放してあげましょう。指先から飛び立ちます。", message: "幸運のシンボル。何かいいことがある予感ですね。", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><circle cx="50" cy="50" r="30" fill="red"/><circle cx="40" cy="40" r="5" fill="black"/><circle cx="60" cy="40" r="5" fill="black"/><circle cx="50" cy="60" r="5" fill="black"/></svg>' },
+        { name: "クロアリ", tags: ["黒", "小", "いいえ", "普通"], danger: "低", harm: "基本的には無害ですが、食べ物に集まることがあります。", method: "侵入経路を塞ぎ、食べ残しを片付けましょう。", message: "みんなで一生懸命お仕事中。お家の中は迷路だったかな？", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><circle cx="30" cy="50" r="8"/><circle cx="50" cy="50" r="8"/><circle cx="70" cy="50" r="8"/></svg>' },
+        { name: "オオミズアオ", tags: ["緑", "白", "大", "飛ぶ", "はい", "普通"], danger: "低", harm: "大型の蛾ですが、口がなく何も食べません。無害です。", method: "とても美しいですが繊細です。そっと見守るか、壁から優しく移動させて。", message: "月の女神とも呼ばれる美しい蛾。出会えたのは奇跡に近いですよ。", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><path d="M50 50 L20 20 Q50 10 80 20 L50 50 L20 80 Q50 90 80 80 Z" fill="lightgreen"/></svg>' },
+        { name: "アリガタバチ", tags: ["茶", "小", "いいえ", "普通"], danger: "中", harm: "小さいですが針を持っており、刺されるとチクッと痛みます。", method: "見つけたら粘着テープなどで捕獲しましょう。シバンムシを駆除するといなくなります。", message: "小さいけれど自分を守る必死な力。少しだけ距離を置きましょう。", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><path d="M30 50 L70 50" stroke="currentColor" stroke-width="8" stroke-linecap="round"/></svg>' },
+        { name: "紙魚(シミ)", tags: ["灰色", "白", "小", "いいえ", "普通"], danger: "低", harm: "紙や糊を食べます。人は刺しませんが、古い本などが好きな文化的な虫です。", method: "本棚を掃除し、風通しを良くしましょう。ラベンダーの香りが苦手です。", message: "銀色に光る不思議な体。古い本の中からタイムトラベルしてきたのかも。", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><path d="M80 50 L20 40 L20 60 Z" fill="silver"/></svg>' },
+        { name: "ガ(蛾)", tags: ["茶", "灰色", "飛ぶ", "はい", "普通"], danger: "低", harm: "粉が舞うことがありますが、毒を持つものは稀です。", method: "明かりを外につけ、部屋を暗くすると自然に出ていくことが多いです。", message: "パタパタと忙しそうですね。落ち着いて、窓を開けてあげましょう。", icon: '<svg viewBox="0 0 100 100" class="bug-icon"><path d="M50 50 L10 30 L10 70 Z M50 50 L90 30 L90 70 Z"/></svg>' }
+    ];
+
+    const tags = [
+        { label: "黒い", val: "黒" }, { label: "茶色い", val: "茶" }, { label: "緑色", val: "緑" },
+        { label: "白い", val: "白" }, { label: "大きい", val: "大" }, { label: "小さい", val: "小" },
+        { label: "足が多い", val: "多い" }, { label: "足6本位", val: "普通" },
+        { label: "飛ぶ", val: "飛ぶ" }, { label: "速い", val: "速い" }
+    ];
+
+    let selectedTags = new Set();
+    const tagBox = document.getElementById('tag-box');
+    const input = document.getElementById('search-input');
+    const checkBtn = document.getElementById('check-btn');
+    const resultArea = document.getElementById('result-area');
+
+    // タグ生成
+    tags.forEach(t => {
+        const btn = document.createElement('button');
+        btn.className = 'tag-btn';
+        btn.textContent = t.label;
+        btn.onclick = () => {
+            btn.classList.toggle('active');
+            if (selectedTags.has(t.val)) {
+                selectedTags.delete(t.val);
+            } else {
+                selectedTags.add(t.val);
+            }
+        };
+        tagBox.appendChild(btn);
+    });
+
+    // 判定ロジック
+    checkBtn.onclick = () => {
+        const searchText = input.value;
+        const results = bugDB.map(bug => {
+            let score = 0;
+            // タグマッチング
+            selectedTags.forEach(tag => {
+                if (bug.tags.includes(tag)) score += 10;
+            });
+            // テキストマッチング
+            bug.tags.forEach(tag => {
+                if (searchText.includes(tag)) score += 5;
+            });
+            if (searchText.includes(bug.name)) score += 50;
+            
+            return { ...bug, score };
+        })
+        .filter(b => b.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3);
+
+        renderResults(results);
+    };
+
+    function renderResults(results) {
+        resultArea.innerHTML = '';
+        if (results.length === 0) {
+            resultArea.innerHTML = `
+                <div class="no-result">
+                    <p>該当する虫は見つかりませんでした。<br>まずは深呼吸しましょう。大丈夫ですよ。</p>
+                    <div class="breathing-circle"></div>
+                    <p style="font-size:0.8rem">ゆっくり、もう一度特徴を選んでみてください。</p>
+                </div>
+            `;
+            return;
+        }
+
+        results.forEach(bug => {
+            const dangerColor = bug.danger === '高' ? 'var(--high-danger)' : bug.danger === '中' ? 'var(--mid-danger)' : 'var(--low-danger)';
+            const dangerWidth = bug.danger === '高' ? '90%' : bug.danger === '中' ? '50%' : '20%';
+            
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.innerHTML = `
+                <div class="card-header">
+                    ${bug.icon}
+                    <h2 style="margin:0">${bug.name} かも</h2>
+                </div>
+                <div class="danger-text">
+                    <span>落ち着き度（危険度）</span>
+                    <span>${bug.danger === '低' ? '安心' : bug.danger === '中' ? '注意' : '警戒'}</span>
+                </div>
+                <div class="danger-bar-container">
+                    <div class="danger-bar" style="width: ${dangerWidth}; background-color: ${dangerColor}"></div>
+                </div>
+                <p><strong>どんな虫？:</strong> ${bug.harm}</p>
+                <div class="advice-box">
+                    <strong>やさしい対応方法:</strong><br>${bug.method}
+                </div>
+                <p class="calm-message">「${bug.message}」</p>
+            `;
+            resultArea.appendChild(card);
+        });
+    }
+
+    // PWA Service Worker 登録
+    if ('service-worker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js');
+    }
+</script>
+
+</body>
+</html>
