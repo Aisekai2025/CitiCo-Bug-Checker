@@ -87,19 +87,23 @@
             background-color: var(--soft-white);
         }
 
-        #check-btn {
-            width: 100%;
-            padding: 15px;
-            background-color: var(--main-green);
-            border: none;
-            border-radius: 15px;
-            color: var(--accent-brown);
-            font-weight: bold;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: opacity 0.2s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
+       #check-btn {
+    width: 100%;
+    padding: 15px;
+    background-color: #e8f3dd; /* 淡いグリーンに変更 */
+    border: none;
+    border-radius: 20px; /* 丸みを強める */
+    color: #4b4b4b;
+    font-weight: bold;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+#check-btn:hover {
+    background-color: #d9ebcc; /* 少し濃くなる */
+}
 
         #check-btn:active {
             opacity: 0.8;
@@ -191,6 +195,21 @@
             0%, 100% { transform: scale(1); opacity: 0.5; }
             50% { transform: scale(1.5); opacity: 0.2; }
         }
+        #resetBtn {
+    background-color: #f0f4e8; /* 淡いやさしい色 */
+    color: #4b4b4b;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px; /* 丸くする */
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-left: 8px;
+    transition: background-color 0.2s ease;
+}
+
+#resetBtn:hover {
+    background-color: #e3ecd8; /* 少し濃くなる */
+}
     </style>
 </head>
 <body>
@@ -206,7 +225,7 @@
 
     <input type="text" id="search-input" placeholder="例：黒くてカサカサ動く...">
     <button id="check-btn">判定する</button>
-
+    <button id="resetBtn">リセット</button>
     <div id="result-area"></div>
 </div>
 
@@ -328,6 +347,18 @@
             resultArea.appendChild(card);
         });
     }
+    // ★★★ リセットボタンの処理はここに入れる ★★★
+    document.getElementById("resetBtn").onclick = () => {
+    // 入力欄クリア
+    input.value = "";
+
+    // タグ選択クリア
+    selectedTags.clear();
+    document.querySelectorAll(".tag-btn").forEach(btn => btn.classList.remove("active"));
+
+    // 結果クリア
+    resultArea.innerHTML = "";
+};
 
     // PWA Service Worker 登録
     if ('service-worker' in navigator) {
